@@ -1,7 +1,10 @@
 # from llama_index import VectorStoreIndex, SimpleDirectoryReader
+from typing import Dict
 import nest_asyncio
 
 nest_asyncio.apply()
+
+from llama_index.core.extractors import BaseExtractor
 
 from llama_index.core.node_parser import SimpleNodeParser  # type: ignore
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader  # type: ignore
@@ -41,12 +44,9 @@ nodes = []
 for directory, roles in documents:
 
     class CustomExtractor(BaseExtractor):
-        def class_name():
-            return "CustomExtractor"
-
-        # Attach an allowlist of roles to each document as metadata
-        def extract(self, nodes):
-            return [{role: ALLOWED_VALUE for role in roles}] * len(nodes)
+        async def aextract(self, nodes) -> list[Dict]:
+            metadata_list = [{role: ALLOWED_VALUE for role in roles}] * len(nodes)
+            return metadata_list
 
     # Use the CustomExtractor to attach metadata to nodes based on their defined permissions
     extractor = [
@@ -55,7 +55,7 @@ for directory, roles in documents:
         # EntityExtractor(prediction_threshold=0.5),
         # SummaryExtractor(summaries=["prev", "self"], llm=llm),
         # KeywordExtractor(keywords=10, llm=llm),
-        # CustomExtractor()
+        CustomExtractor()
     ]
 
     transformations = extractor
@@ -72,7 +72,7 @@ for directory, roles in documents:
     # nodes = nodes + parser.get_nodes_from_documents(docs)
 
 # Create the index with all nodes including their role-based metadata
-index = VectorStoreIndex(nodes)
+index = VectorStoreIndex(uber_nodes)
 
 # Persist the index for querying in a different script to reduce OpenAI API usage
 index.storage_context.persist()
