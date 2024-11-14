@@ -1,9 +1,15 @@
 # from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core.node_parser import SimpleNodeParser
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+import nest_asyncio
+
+nest_asyncio.apply()
+
+from llama_index.core.node_parser import SimpleNodeParser  # type: ignore
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader  # type: ignore
+from llama_index.core import Settings  # type: ignore
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding  # type: ignore
 
 # from llama_index.llms.huggingface import HuggingFaceLLM
-from llama_index.core.extractors import (
+from llama_index.core.extractors import (  # type: ignore
     SummaryExtractor,
     QuestionsAnsweredExtractor,
     TitleExtractor,
@@ -11,15 +17,16 @@ from llama_index.core.extractors import (
     BaseExtractor,
 )
 from constants import ALLOWED_VALUE, ENGINEERING_ROLE, FINANCE_ROLE
-from llama_index.core.ingestion import IngestionPipeline
+from llama_index.core.ingestion import IngestionPipeline  # type: ignore
 
-from llama_index.llms.lmstudio import LMStudio
+from llama_index.llms.lmstudio import LMStudio  # type: ignore
 
-llm = LMStudio(
-    model_name="Llama-3.2-3B-Instruct-Q8_0-GGUF",
+Settings.llm = LMStudio(
+    model_name="gemma-2-2b-instruct",
     base_url="http://localhost:1234/v1",
     temperature=0.3,
 )
+Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 # Connect documents to their permissions based on directory
 # In a real applications, this would come from the source api
@@ -43,8 +50,8 @@ for directory, roles in documents:
 
     # Use the CustomExtractor to attach metadata to nodes based on their defined permissions
     extractor = [
-        TitleExtractor(nodes=5, llm=llm),
-        QuestionsAnsweredExtractor(questions=1, llm=llm),
+        # TitleExtractor(nodes=5, llm=llm),
+        # QuestionsAnsweredExtractor(questions=1, llm=llm),
         # EntityExtractor(prediction_threshold=0.5),
         # SummaryExtractor(summaries=["prev", "self"], llm=llm),
         # KeywordExtractor(keywords=10, llm=llm),
@@ -57,7 +64,9 @@ for directory, roles in documents:
     pipeline = IngestionPipeline(transformations=transformations)
 
     uber_nodes = pipeline.run(documents=docs)
+    print("\n================================")
     print(uber_nodes)
+    print("\n================================")
 
     # parser = SimpleNodeParser.from_defaults(metadata_extractor=extractor)
     # nodes = nodes + parser.get_nodes_from_documents(docs)
